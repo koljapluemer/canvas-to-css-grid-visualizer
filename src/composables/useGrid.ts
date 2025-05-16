@@ -14,7 +14,7 @@ const DEFAULT_CONFIG: GridConfig = {
   cellSize: 40
 }
 
-// Initialize with saved values or defaults
+// Restore localStorage usage for grid config
 const savedConfig = localStorage.getItem(STORAGE_KEY)
 const initialConfig = savedConfig ? JSON.parse(savedConfig) : DEFAULT_CONFIG
 

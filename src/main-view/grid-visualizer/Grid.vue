@@ -9,56 +9,61 @@
         gridTemplateRows: 'repeat(' + rows + ', ' + gridConfig.cellSize + 'px)'
       }"
     >
-      <!-- Grid cells -->
+      <!-- Grid cells with Unicode SSoT rendering -->
       <div
-        v-for="(_, index) in totalCells"
+        v-for="index in totalCells"
         :key="'cell-' + index"
-        :class="[
-          'border border-gray-200',
-          isEvenCell(index) ? 'bg-gray-100' : 'bg-white'
-        ]"
-      ></div>
-
-      <!-- Outgoing edge overlays -->
-      <div
-        v-for="edge in outgoingEdges"
-        :key="'edge-' + edge.nodeId + '-' + edge.direction"
-        class="absolute z-20 pointer-events-none"
-        :style="{
-          left: edge.x * gridConfig.cellSize + 'px',
-          top: edge.y * gridConfig.cellSize + 'px',
-          width: gridConfig.cellSize + 'px',
-          height: gridConfig.cellSize + 'px',
-          background: edge.color,
-          opacity: 0.85,
-          borderRadius: '6px',
-          border: '2px solid #222',
-          boxShadow: '0 0 6px 2px ' + edge.color
-        }"
-      ></div>
-
-      <!-- Edge paths -->
-      <template v-for="edgePath in edgePaths">
+        class="relative flex items-center justify-center"
+        :style="{ width: gridConfig.cellSize + 'px', height: gridConfig.cellSize + 'px' }"
+      >
         <div
-          v-for="(cell, idx) in edgePath.path"
-          :key="'edgepath-' + edgePath.fromNodeId + '-' + edgePath.toNodeId + '-' + idx"
-          class="absolute z-10 pointer-events-none flex items-center justify-center"
+          :class="[
+            'absolute inset-0',
+            'border border-gray-200',
+            isEvenCell(index - 1) ? 'bg-gray-100' : 'bg-white'
+          ]"
+        ></div>
+        <span v-if="cellUnicode(index - 1)" class="relative z-10 text-lg select-none">
+          {{ cellUnicode(index - 1) }}
+        </span>
+      </div>
+
+      <!-- Edge path arrow heads -->
+      <template v-for="edgePath in edgePaths">
+        <span
+          v-if="edgePath.path.length > 1"
+          :key="'arrowhead-start-' + edgePath.fromNodeId + '-' + edgePath.toNodeId"
+          class="absolute z-30 text-lg select-none"
           :style="{
-            left: cell.x * gridConfig.cellSize + 'px',
-            top: cell.y * gridConfig.cellSize + 'px',
+            left: edgePath.path[0].x * gridConfig.cellSize + 'px',
+            top: edgePath.path[0].y * gridConfig.cellSize + 'px',
             width: gridConfig.cellSize + 'px',
             height: gridConfig.cellSize + 'px',
-            background: edgePath.color,
-            opacity: 0.7,
-            borderRadius: '6px',
-            border: '2px solid #222',
-            fontWeight: 'bold',
-            fontSize: '1.2em',
-            color: '#222'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: edgePath.color
           }"
         >
-          <span v-if="edgePath.crossings.has(cell.x + ',' + cell.y)">X</span>
-        </div>
+          {{ arrowHeadUnicode(edgePath.path[0], edgePath.path[1]) }}
+        </span>
+        <span
+          v-if="edgePath.path.length > 1"
+          :key="'arrowhead-end-' + edgePath.fromNodeId + '-' + edgePath.toNodeId"
+          class="absolute z-30 text-lg select-none"
+          :style="{
+            left: edgePath.path[edgePath.path.length-1].x * gridConfig.cellSize + 'px',
+            top: edgePath.path[edgePath.path.length-1].y * gridConfig.cellSize + 'px',
+            width: gridConfig.cellSize + 'px',
+            height: gridConfig.cellSize + 'px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: edgePath.color
+          }"
+        >
+          {{ arrowHeadUnicode(edgePath.path[edgePath.path.length-1], edgePath.path[edgePath.path.length-2]) }}
+        </span>
       </template>
 
       <!-- Nodes -->
@@ -85,10 +90,46 @@
 import { useGrid } from '@/composables/useGrid'
 import { useNodes } from '@/composables/useNodes'
 import { useEdges } from '@/composables/useEdges'
+import { useGridCells } from '@/composables/useGridCells'
+import { computed } from 'vue'
 
 const { gridConfig, columns, rows, totalCells } = useGrid()
 const { nodes, toggleHighlight, isHighlighted } = useNodes()
-const { outgoingEdges, edgePaths } = useEdges()
+const { edgePaths } = useEdges()
+const { getCell } = useGridCells()
+
+const unicodeMap: Record<string, string> = {
+  'edge-straight-h': '─',
+  'edge-straight-v': '│',
+  'edge-elbow-nw': '┌',
+  'edge-elbow-ne': '┐',
+  'edge-elbow-sw': '└',
+  'edge-elbow-se': '┘',
+  'edge-cross': '┼',
+  'edge-arrow-n': '↑',
+  'edge-arrow-s': '↓',
+  'edge-arrow-e': '→',
+  'edge-arrow-w': '←'
+}
+
+function cellUnicode(index: number): string | undefined {
+  const x = index % columns.value
+  const y = Math.floor(index / columns.value)
+  const occ = getCell(x, y)
+  if (!occ || occ.type === 'node') return undefined
+  return unicodeMap[occ.type] || undefined
+}
+
+function arrowHeadUnicode(cell: {x: number, y: number}, nextCell: {x: number, y: number}): string {
+  if (!cell || !nextCell) return ''
+  const dx = nextCell.x - cell.x
+  const dy = nextCell.y - cell.y
+  if (dx === 1) return '→'
+  if (dx === -1) return '←'
+  if (dy === 1) return '↓'
+  if (dy === -1) return '↑'
+  return ''
+}
 
 const isEvenCell = (index: number) => {
   const row = Math.floor(index / columns.value)

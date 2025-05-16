@@ -204,6 +204,7 @@ const emitConnect = () => {
       })
     }
     if (result) {
+      // The path cells already have their types from the pathfinder
       addEdgePath({
         fromNodeId: nodeA.id,
         toNodeId: nodeB.id,

@@ -1,4 +1,5 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import type { CellType, PathCell } from '@/utils/findManhattanPath'
 
 export type EdgeDirection = 'N' | 'S' | 'E' | 'W'
 
@@ -14,12 +15,26 @@ export interface EdgePath {
   fromNodeId: string
   toNodeId: string
   color: string
-  path: { x: number; y: number }[]
+  path: PathCell[]
   crossings: Set<string>
+}
+
+export interface EdgeSegment {
+  x: number
+  y: number
+  type: CellType
 }
 
 const outgoingEdges = ref<OutgoingEdge[]>([])
 const edgePaths = ref<EdgePath[]>([])
+
+const allEdgeSegments = computed(() => {
+  const segs: EdgeSegment[] = []
+  for (const edgePath of edgePaths.value) {
+    segs.push(...edgePath.path.map(cell => ({ x: cell.x, y: cell.y, type: cell.type })))
+  }
+  return segs
+})
 
 export function useEdges() {
   const addOutgoingEdge = (edge: OutgoingEdge) => {
@@ -44,6 +59,7 @@ export function useEdges() {
     clearOutgoingEdges,
     edgePaths,
     addEdgePath,
-    clearEdgePaths
+    clearEdgePaths,
+    allEdgeSegments
   }
 } 
