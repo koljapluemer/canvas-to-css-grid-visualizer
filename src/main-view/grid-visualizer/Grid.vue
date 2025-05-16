@@ -37,6 +37,30 @@
         }"
       ></div>
 
+      <!-- Edge paths -->
+      <template v-for="edgePath in edgePaths">
+        <div
+          v-for="(cell, idx) in edgePath.path"
+          :key="'edgepath-' + edgePath.fromNodeId + '-' + edgePath.toNodeId + '-' + idx"
+          class="absolute z-10 pointer-events-none flex items-center justify-center"
+          :style="{
+            left: cell.x * gridConfig.cellSize + 'px',
+            top: cell.y * gridConfig.cellSize + 'px',
+            width: gridConfig.cellSize + 'px',
+            height: gridConfig.cellSize + 'px',
+            background: edgePath.color,
+            opacity: 0.7,
+            borderRadius: '6px',
+            border: '2px solid #222',
+            fontWeight: 'bold',
+            fontSize: '1.2em',
+            color: '#222'
+          }"
+        >
+          <span v-if="edgePath.crossings.has(cell.x + ',' + cell.y)">X</span>
+        </div>
+      </template>
+
       <!-- Nodes -->
       <div
         v-for="node in nodes"
@@ -64,7 +88,7 @@ import { useEdges } from '@/composables/useEdges'
 
 const { gridConfig, columns, rows, totalCells } = useGrid()
 const { nodes, toggleHighlight, isHighlighted } = useNodes()
-const { outgoingEdges } = useEdges()
+const { outgoingEdges, edgePaths } = useEdges()
 
 const isEvenCell = (index: number) => {
   const row = Math.floor(index / columns.value)

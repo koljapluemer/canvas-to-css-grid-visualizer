@@ -31,15 +31,20 @@
 import { useGrid } from '@/composables/useGrid'
 import { useNodes, type Node } from '@/composables/useNodes'
 import { useEdges, type EdgeDirection } from '@/composables/useEdges'
+import { findManhattanPath } from '@/utils/findManhattanPath'
 import { computed } from 'vue'
 
 const { columns, rows } = useGrid()
 const { addNode, nodes, highlighted, highlightedCount } = useNodes()
-const { addOutgoingEdge } = useEdges()
+const { addOutgoingEdge, outgoingEdges, addEdgePath } = useEdges()
 
 const emit = defineEmits<{
   (e: 'add-outgoing-edge', nodeId: string): void
 }>()
+
+function cellKey(x: number, y: number) {
+  return `${x},${y}`
+}
 
 function isOverlap(a: Node, b: Node) {
   return (
@@ -91,10 +96,11 @@ const addRandomNode = () => {
   }
 }
 
-function addRandomEdgeForNode(node: Node) {
+function addRandomEdgeForNode(node: Node, color: string) {
   const directions: EdgeDirection[] = ['N', 'S', 'E', 'W']
   let found = false
   let tries = 0
+  let outX = node.x, outY = node.y, outDir: EdgeDirection = 'N'
   while (!found && tries < 4 && directions.length > 0) {
     const dirIdx = Math.floor(Math.random() * directions.length)
     const dir = directions[dirIdx]
@@ -116,11 +122,14 @@ function addRandomEdgeForNode(node: Node) {
     if (x >= 0 && x < columns.value && y >= 0 && y < rows.value) {
       // Not inside the node
       if (!(x >= node.x && x < node.x + node.width && y >= node.y && y < node.y + node.height)) {
-        // Random color for edge
-        const hue = Math.floor(Math.random() * 360)
-        const color = `hsl(${hue}, 90%, 55%)`
-        addOutgoingEdge({ nodeId: node.id, direction: dir, x, y, color })
-        found = true
+        // Not on another outgoing edge
+        if (!outgoingEdges.value.some(e => e.x === x && e.y === y)) {
+          addOutgoingEdge({ nodeId: node.id, direction: dir, x, y, color })
+          outX = x; outY = y; outDir = dir
+          found = true
+        } else {
+          directions.splice(dirIdx, 1)
+        }
       } else {
         directions.splice(dirIdx, 1)
       }
@@ -129,15 +138,17 @@ function addRandomEdgeForNode(node: Node) {
     }
     tries++
   }
+  return { x: outX, y: outY, dir: outDir }
 }
 
 const emitOutgoingEdge = () => {
   if (highlightedCount.value === 1) {
-    // Find the selected node
     const nodeId = Array.from(highlighted.value)[0]
     const node = nodes.value.find(n => n.id === nodeId)
     if (!node) return
-    addRandomEdgeForNode(node)
+    const hue = Math.floor(Math.random() * 360)
+    const color = `hsl(${hue}, 90%, 55%)`
+    addRandomEdgeForNode(node, color)
   }
 }
 
@@ -147,8 +158,60 @@ const emitConnect = () => {
     const nodeA = nodes.value.find(n => n.id === nodeIds[0])
     const nodeB = nodes.value.find(n => n.id === nodeIds[1])
     if (!nodeA || !nodeB) return
-    addRandomEdgeForNode(nodeA)
-    addRandomEdgeForNode(nodeB)
+    const hue = Math.floor(Math.random() * 360)
+    const color = `hsl(${hue}, 90%, 55%)`
+    // Generate outgoing points for both nodes
+    const outA = addRandomEdgeForNode(nodeA, color)
+    const outB = addRandomEdgeForNode(nodeB, color)
+    // Prepare obstacles: all node cells
+    const obstacles = new Set<string>()
+    nodes.value.forEach(n => {
+      for (let dx = 0; dx < n.width; dx++) {
+        for (let dy = 0; dy < n.height; dy++) {
+          obstacles.add(cellKey(n.x + dx, n.y + dy))
+        }
+      }
+    })
+    // Prepare edge cells: all outgoing and path cells except the endpoints
+    const edgeCells = new Set<string>()
+    outgoingEdges.value.forEach(e => {
+      if (!(e.x === outA.x && e.y === outA.y) && !(e.x === outB.x && e.y === outB.y)) {
+        edgeCells.add(cellKey(e.x, e.y))
+      }
+    })
+    // Add all path cells from existing edge paths
+    // (for now, allow crossings, but penalize in pathfinder)
+    // TODO: add path cells from edgePaths if you want to avoid them more strictly
+    // --- Two-pass pathfinding ---
+    // First pass: crossings forbidden
+    let result = findManhattanPath({
+      start: { x: outA.x, y: outA.y },
+      end: { x: outB.x, y: outB.y },
+      width: columns.value,
+      height: rows.value,
+      obstacles: new Set([...obstacles, ...edgeCells]),
+      edgeCells: new Set() // no crossings allowed
+    })
+    // Second pass: allow crossings with penalty if needed
+    if (!result) {
+      result = findManhattanPath({
+        start: { x: outA.x, y: outA.y },
+        end: { x: outB.x, y: outB.y },
+        width: columns.value,
+        height: rows.value,
+        obstacles,
+        edgeCells
+      })
+    }
+    if (result) {
+      addEdgePath({
+        fromNodeId: nodeA.id,
+        toNodeId: nodeB.id,
+        color,
+        path: result.path,
+        crossings: result.crossings
+      })
+    }
   }
 }
 </script>

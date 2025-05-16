@@ -10,7 +10,16 @@ export interface OutgoingEdge {
   color: string
 }
 
+export interface EdgePath {
+  fromNodeId: string
+  toNodeId: string
+  color: string
+  path: { x: number; y: number }[]
+  crossings: Set<string>
+}
+
 const outgoingEdges = ref<OutgoingEdge[]>([])
+const edgePaths = ref<EdgePath[]>([])
 
 export function useEdges() {
   const addOutgoingEdge = (edge: OutgoingEdge) => {
@@ -21,9 +30,20 @@ export function useEdges() {
     outgoingEdges.value = []
   }
 
+  const addEdgePath = (edgePath: EdgePath) => {
+    edgePaths.value.push(edgePath)
+  }
+
+  const clearEdgePaths = () => {
+    edgePaths.value = []
+  }
+
   return {
     outgoingEdges,
     addOutgoingEdge,
-    clearOutgoingEdges
+    clearOutgoingEdges,
+    edgePaths,
+    addEdgePath,
+    clearEdgePaths
   }
 } 
