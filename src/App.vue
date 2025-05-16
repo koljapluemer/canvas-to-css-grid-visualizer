@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import MainView from './main-view/MainView.vue'
 </script>
 
 <template>
-  <div class="font-bold">Hello World</div>
+  <MainView />
 </template>
 
