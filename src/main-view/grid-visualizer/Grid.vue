@@ -1,21 +1,35 @@
 <template>
   <div class="p-4">
     <div
-      class="grid gap-0 border border-gray-300"
+      class="grid gap-0 border border-gray-300 relative"
       :style="{
-        width: containerWidth + 'px',
-        height: containerHeight + 'px',
-        gridTemplateColumns: 'repeat(' + columns + ', ' + cellSize + 'px)',
-        gridTemplateRows: 'repeat(' + rows + ', ' + cellSize + 'px)'
+        width: gridConfig.containerWidth + 'px',
+        height: gridConfig.containerHeight + 'px',
+        gridTemplateColumns: 'repeat(' + columns + ', ' + gridConfig.cellSize + 'px)',
+        gridTemplateRows: 'repeat(' + rows + ', ' + gridConfig.cellSize + 'px)'
       }"
     >
+      <!-- Grid cells -->
       <div
         v-for="(_, index) in totalCells"
-        :key="index"
+        :key="'cell-' + index"
         :class="[
           'border border-gray-200',
           isEvenCell(index) ? 'bg-gray-100' : 'bg-white'
         ]"
+      ></div>
+
+      <!-- Nodes -->
+      <div
+        v-for="node in nodes"
+        :key="node.id"
+        class="absolute bg-blue-500 bg-opacity-50 border-2 border-blue-600 rounded"
+        :style="{
+          left: node.x * gridConfig.cellSize + 'px',
+          top: node.y * gridConfig.cellSize + 'px',
+          width: node.width * gridConfig.cellSize + 'px',
+          height: node.height * gridConfig.cellSize + 'px'
+        }"
       ></div>
     </div>
   </div>
@@ -23,18 +37,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useGrid } from '@/composables/useGrid'
+import { useNodes } from '@/composables/useNodes'
 
-interface Props {
-  containerWidth: number
-  containerHeight: number
-  cellSize: number
-}
-
-const props = defineProps<Props>()
-
-const columns = computed(() => Math.floor(props.containerWidth / props.cellSize))
-const rows = computed(() => Math.floor(props.containerHeight / props.cellSize))
-const totalCells = computed(() => columns.value * rows.value)
+const { gridConfig, columns, rows, totalCells } = useGrid()
+const { nodes } = useNodes()
 
 const isEvenCell = (index: number) => {
   const row = Math.floor(index / columns.value)

@@ -5,7 +5,7 @@
         <label for="containerWidth" class="text-sm font-medium text-gray-700">Container Width (px):</label>
         <input
           id="containerWidth"
-          v-model="containerWidth"
+          v-model="gridConfig.containerWidth"
           type="number"
           min="100"
           max="1200"
@@ -17,7 +17,7 @@
         <label for="containerHeight" class="text-sm font-medium text-gray-700">Container Height (px):</label>
         <input
           id="containerHeight"
-          v-model="containerHeight"
+          v-model="gridConfig.containerHeight"
           type="number"
           min="100"
           max="800"
@@ -29,7 +29,7 @@
         <label for="cellSize" class="text-sm font-medium text-gray-700">Cell Size (px):</label>
         <input
           id="cellSize"
-          v-model="cellSize"
+          v-model="gridConfig.cellSize"
           type="number"
           min="20"
           max="100"
@@ -41,21 +41,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
+import { useGrid } from '@/composables/useGrid'
 
-const containerWidth = ref(800)
-const containerHeight = ref(600)
-const cellSize = ref(40)
+const { gridConfig, updateGrid } = useGrid()
 
-const emit = defineEmits<{
-  (e: 'update:grid', value: { containerWidth: number; containerHeight: number; cellSize: number }): void
-}>()
-
-watch([containerWidth, containerHeight, cellSize], ([width, height, size]) => {
-  emit('update:grid', {
-    containerWidth: Number(width),
-    containerHeight: Number(height),
-    cellSize: Number(size)
-  })
-}, { immediate: true })
+watch(gridConfig, (newConfig) => {
+  updateGrid(newConfig)
+}, { deep: true })
 </script>
