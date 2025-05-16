@@ -23,7 +23,8 @@
       <div
         v-for="node in nodes"
         :key="node.id"
-        class="absolute border-2 border-blue-600 rounded"
+        class="absolute rounded cursor-pointer transition-all"
+        :class="isHighlighted(node.id) ? 'border-4 border-black border-dashed z-10' : 'border-2 border-blue-600'"
         :style="{
           left: node.x * gridConfig.cellSize + 'px',
           top: node.y * gridConfig.cellSize + 'px',
@@ -32,6 +33,7 @@
           background: node.color,
           opacity: 0.85
         }"
+        @click.stop="toggleHighlight(node.id)"
       ></div>
     </div>
   </div>
@@ -42,7 +44,7 @@ import { useGrid } from '@/composables/useGrid'
 import { useNodes } from '@/composables/useNodes'
 
 const { gridConfig, columns, rows, totalCells } = useGrid()
-const { nodes } = useNodes()
+const { nodes, toggleHighlight, isHighlighted } = useNodes()
 
 const isEvenCell = (index: number) => {
   const row = Math.floor(index / columns.value)

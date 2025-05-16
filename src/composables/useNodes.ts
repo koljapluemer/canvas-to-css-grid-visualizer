@@ -10,6 +10,7 @@ export interface Node {
 }
 
 const nodes = ref<Node[]>([])
+const highlighted = ref<Set<string>>(new Set())
 
 export function useNodes() {
   const addNode = (node: Node) => {
@@ -18,6 +19,7 @@ export function useNodes() {
 
   const removeNode = (id: string) => {
     nodes.value = nodes.value.filter(node => node.id !== id)
+    highlighted.value.delete(id)
   }
 
   const updateNode = (id: string, updates: Partial<Node>) => {
@@ -27,10 +29,23 @@ export function useNodes() {
     }
   }
 
+  const toggleHighlight = (id: string) => {
+    if (highlighted.value.has(id)) {
+      highlighted.value.delete(id)
+    } else {
+      highlighted.value.add(id)
+    }
+  }
+
+  const isHighlighted = (id: string) => highlighted.value.has(id)
+
   return {
     nodes,
     addNode,
     removeNode,
-    updateNode
+    updateNode,
+    highlighted,
+    toggleHighlight,
+    isHighlighted
   }
 } 
