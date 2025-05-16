@@ -7,6 +7,14 @@
       >
         Add Random Node
       </button>
+      <button
+        @click="emitOutgoingEdge"
+        :disabled="highlightedCount !== 1"
+        class="px-4 py-2 rounded transition-colors text-white"
+        :class="highlightedCount === 1 ? 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2' : 'bg-gray-400 cursor-not-allowed'"
+      >
+        Add Outgoing Edge
+      </button>
     </div>
   </div>
 </template>
@@ -14,9 +22,16 @@
 <script setup lang="ts">
 import { useGrid } from '@/composables/useGrid'
 import { useNodes, type Node } from '@/composables/useNodes'
+import { useEdges, type EdgeDirection } from '@/composables/useEdges'
+import { computed } from 'vue'
 
 const { columns, rows } = useGrid()
-const { addNode, nodes } = useNodes()
+const { addNode, nodes, highlighted, highlightedCount } = useNodes()
+const { addOutgoingEdge } = useEdges()
+
+const emit = defineEmits<{
+  (e: 'add-outgoing-edge', nodeId: string): void
+}>()
 
 function isOverlap(a: Node, b: Node) {
   return (
@@ -65,6 +80,54 @@ const addRandomNode = () => {
       placed = true
     }
     attempt++
+  }
+}
+
+const emitOutgoingEdge = () => {
+  if (highlightedCount.value === 1) {
+    // Find the selected node
+    const nodeId = Array.from(highlighted.value)[0]
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    // Try up to 4 directions
+    const directions: EdgeDirection[] = ['N', 'S', 'E', 'W']
+    let found = false
+    let tries = 0
+    while (!found && tries < 4) {
+      const dirIdx = Math.floor(Math.random() * directions.length)
+      const dir = directions[dirIdx]
+      let x = node.x, y = node.y
+      if (dir === 'N') {
+        x = node.x + Math.floor(node.width / 2)
+        y = node.y - 1
+      } else if (dir === 'S') {
+        x = node.x + Math.floor(node.width / 2)
+        y = node.y + node.height
+      } else if (dir === 'E') {
+        x = node.x + node.width
+        y = node.y + Math.floor(node.height / 2)
+      } else if (dir === 'W') {
+        x = node.x - 1
+        y = node.y + Math.floor(node.height / 2)
+      }
+      // Check bounds
+      if (x >= 0 && x < columns.value && y >= 0 && y < rows.value) {
+        // Not inside the node
+        if (!(x >= node.x && x < node.x + node.width && y >= node.y && y < node.y + node.height)) {
+          // Random color for edge
+          const hue = Math.floor(Math.random() * 360)
+          const color = `hsl(${hue}, 90%, 55%)`
+          addOutgoingEdge({ nodeId, direction: dir, x, y, color })
+          found = true
+        } else {
+          directions.splice(dirIdx, 1)
+        }
+      } else {
+        directions.splice(dirIdx, 1)
+      }
+      tries++
+    }
   }
 }
 </script>

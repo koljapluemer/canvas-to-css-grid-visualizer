@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, Ref, computed } from 'vue'
 
 export interface Node {
   id: string
@@ -10,7 +10,9 @@ export interface Node {
 }
 
 const nodes = ref<Node[]>([])
-const highlighted = ref<Set<string>>(new Set())
+const highlighted: Ref<Set<string>> = ref(new Set())
+
+const highlightedCount = computed(() => highlighted.value.size)
 
 export function useNodes() {
   const addNode = (node: Node) => {
@@ -45,6 +47,7 @@ export function useNodes() {
     removeNode,
     updateNode,
     highlighted,
+    highlightedCount,
     toggleHighlight,
     isHighlighted
   }

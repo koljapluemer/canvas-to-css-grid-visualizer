@@ -19,6 +19,24 @@
         ]"
       ></div>
 
+      <!-- Outgoing edge overlays -->
+      <div
+        v-for="edge in outgoingEdges"
+        :key="'edge-' + edge.nodeId + '-' + edge.direction"
+        class="absolute z-20 pointer-events-none"
+        :style="{
+          left: edge.x * gridConfig.cellSize + 'px',
+          top: edge.y * gridConfig.cellSize + 'px',
+          width: gridConfig.cellSize + 'px',
+          height: gridConfig.cellSize + 'px',
+          background: edge.color,
+          opacity: 0.85,
+          borderRadius: '6px',
+          border: '2px solid #222',
+          boxShadow: '0 0 6px 2px ' + edge.color
+        }"
+      ></div>
+
       <!-- Nodes -->
       <div
         v-for="node in nodes"
@@ -42,9 +60,11 @@
 <script setup lang="ts">
 import { useGrid } from '@/composables/useGrid'
 import { useNodes } from '@/composables/useNodes'
+import { useEdges } from '@/composables/useEdges'
 
 const { gridConfig, columns, rows, totalCells } = useGrid()
 const { nodes, toggleHighlight, isHighlighted } = useNodes()
+const { outgoingEdges } = useEdges()
 
 const isEvenCell = (index: number) => {
   const row = Math.floor(index / columns.value)
