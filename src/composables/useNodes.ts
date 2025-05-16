@@ -6,6 +6,7 @@ export interface Node {
   y: number
   width: number
   height: number
+  color: string
 }
 
 const nodes = ref<Node[]>([])

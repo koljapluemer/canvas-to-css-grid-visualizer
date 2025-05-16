@@ -23,12 +23,14 @@
       <div
         v-for="node in nodes"
         :key="node.id"
-        class="absolute bg-blue-500 bg-opacity-50 border-2 border-blue-600 rounded"
+        class="absolute border-2 border-blue-600 rounded"
         :style="{
           left: node.x * gridConfig.cellSize + 'px',
           top: node.y * gridConfig.cellSize + 'px',
           width: node.width * gridConfig.cellSize + 'px',
-          height: node.height * gridConfig.cellSize + 'px'
+          height: node.height * gridConfig.cellSize + 'px',
+          background: node.color,
+          opacity: 0.85
         }"
       ></div>
     </div>
@@ -36,7 +38,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useGrid } from '@/composables/useGrid'
 import { useNodes } from '@/composables/useNodes'
 

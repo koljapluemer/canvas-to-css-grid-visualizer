@@ -15,7 +15,7 @@
 import { useGrid } from '@/composables/useGrid'
 import { useNodes, type Node } from '@/composables/useNodes'
 
-const { gridConfig, columns, rows } = useGrid()
+const { columns, rows } = useGrid()
 const { addNode, nodes } = useNodes()
 
 function isOverlap(a: Node, b: Node) {
@@ -45,12 +45,17 @@ const addRandomNode = () => {
     const x = Math.floor(Math.random() * (columns.value - width + 1))
     const y = Math.floor(Math.random() * (rows.value - height + 1))
 
+    // Generate random hue, fixed saturation and lightness
+    const hue = Math.floor(Math.random() * 360)
+    const color = `hsl(${hue}, 80%, 60%)`
+
     const newNode: Node = {
       id: crypto.randomUUID(),
       x,
       y,
       width,
-      height
+      height,
+      color
     }
 
     // Check for overlap
